@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tweaking Linear Regression Models</title>
+  <meta charset="utf-8">
+  <meta name="description" content="Tweaking Linear Regression Models">
+  <meta name="author" content="Alexander Hegeman">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="libraries/frameworks/io2012/js/slides" 
+    src="libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>Tweaking Linear Regression Models</h1>
+    <h2>An Introduction</h2>
+    <p>Alexander Hegeman<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Overview</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li><p>Build a linear regression model</p></li>
+<li><p>Investigate ways to improve our model</p>
+
+<ul>
+<li>Look at interaction variables</li>
+</ul></li>
+<li><p>Evaluate our models</p>
+
+<ul>
+<li>Explore Diagnostics</li>
+</ul></li>
+<li><p>Interpret our models</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-2" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Intended Audience</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li><p>Undergraduate students</p></li>
+<li><p>Beginners in data analysis</p></li>
+<li><p>Interested hobbyists</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-3" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Our Data</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Data is from the <span style="color:blue; font-weight:bold">1974 Motor Trend US magazine</span></p>
+
+<pre><code class="r">data(mtcars)
+head(mtcars)
+</code></pre>
+
+<pre><code>##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
+## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
+## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
+## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
+## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
+## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
+## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-4" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Motivating Thoughts</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li><p>What is the question we would like to answer?</p></li>
+<li><p>How are we going to answer this question?</p></li>
+<li><p>What do the data look like?</p></li>
+<li><p>How are we going to evaluate our solution?</p></li>
+<li><p>Are there interesting relationships in our data?</p></li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-5" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p>We will use \(R^2\) to evaluate our models.</p>
+
+<p>\(R^2\) is the percentage of variance of the response variable explained by the model</p>
+
+<p>Higher \(R^2\) is better*</p>
+
+<p>Other options:</p>
+
+<ul>
+<li>RMSE</li>
+<li>Accuracy</li>
+<li>AUC</li>
+</ul>
+
+<p>Occam&#39;s Razor</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-6" style="background:#BCC6CC;">
+  <hgroup>
+    <h3>Correlation Between All Varibles</h3>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-2-1.png" title="plot of chunk unnamed-chunk-2" alt="plot of chunk unnamed-chunk-2" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-7" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>First Model</h2>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">fit_all &lt;- lm(mpg ~ ., data = mtcars)
+summary(fit_all)$coefficients
+</code></pre>
+
+<pre><code>##                Estimate  Std. Error    t value   Pr(&gt;|t|)
+## (Intercept) 12.30337416 18.71788443  0.6573058 0.51812440
+## cyl         -0.11144048  1.04502336 -0.1066392 0.91608738
+## disp         0.01333524  0.01785750  0.7467585 0.46348865
+## hp          -0.02148212  0.02176858 -0.9868407 0.33495531
+## drat         0.78711097  1.63537307  0.4813036 0.63527790
+## wt          -3.71530393  1.89441430 -1.9611887 0.06325215
+## qsec         0.82104075  0.73084480  1.1234133 0.27394127
+## vs           0.31776281  2.10450861  0.1509915 0.88142347
+## am           2.52022689  2.05665055  1.2254035 0.23398971
+## gear         0.65541302  1.49325996  0.4389142 0.66520643
+## carb        -0.19941925  0.82875250 -0.2406258 0.81217871
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-8" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>p-values</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Let \(\beta_i\) be the true coefficient of our \(i^{th}\) independent variable.</p>
+
+<p>Then our <strong>p-values</strong> represnt the probability of obtaining our coefficient estimate, \(\hat \beta_i\), given the null hypothesis \(H_0: \beta_i = 0\)</p>
+
+<p>Common significance cutoff value is \(p = 0.05\)</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-9" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Feature Selection</h2>
+  </hgroup>
+  <article data-timings="">
+    <ul>
+<li><p>Identify variable with highest p-value</p></li>
+<li><p>Fit new regression model excluding this variable</p></li>
+<li><p>Repeat process until all independent variables are significant</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-10" style="background:#BCC6CC;">
+  <article data-timings="">
+    <pre><code class="r">fit_minus_one &lt;- lm(mpg ~ .-cyl, data = mtcars)
+summary(fit_minus_one)$coefficients
+</code></pre>
+
+<pre><code>##                Estimate  Std. Error    t value   Pr(&gt;|t|)
+## (Intercept) 10.96007405 13.53030251  0.8100391 0.42659327
+## disp         0.01282839  0.01682215  0.7625891 0.45380797
+## hp          -0.02190885  0.02091131 -1.0477031 0.30615002
+## drat         0.83519652  1.53625251  0.5436584 0.59214373
+## wt          -3.69250814  1.83953550 -2.0073046 0.05715727
+## qsec         0.84244138  0.68678068  1.2266527 0.23291993
+## vs           0.38974986  1.94800204  0.2000767 0.84325850
+## am           2.57742789  1.94034563  1.3283344 0.19768373
+## gear         0.71155439  1.36561933  0.5210489 0.60753821
+## carb        -0.21958316  0.78855537 -0.2784626 0.78325783
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-11" style="background:#BCC6CC;">
+  <article data-timings="">
+    <pre><code class="r">fit_minus_two &lt;- lm(mpg ~ .-cyl -vs, data = mtcars)
+summary(fit_minus_two)$coefficients
+</code></pre>
+
+<pre><code>##                Estimate  Std. Error    t value   Pr(&gt;|t|)
+## (Intercept)  9.76827789 11.89230469  0.8213949 0.41985460
+## disp         0.01214441  0.01612373  0.7532010 0.45897019
+## hp          -0.02095020  0.01992567 -1.0514175 0.30398892
+## drat         0.87509822  1.49112525  0.5868710 0.56300717
+## wt          -3.71151106  1.79833544 -2.0638592 0.05049085
+## qsec         0.91082822  0.58311935  1.5619928 0.13194532
+## am           2.52390094  1.88128007  1.3415870 0.19282690
+## gear         0.75984464  1.31577205  0.5774896 0.56921947
+## carb        -0.24796312  0.75933250 -0.3265541 0.74695821
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-12" style="background:#BCC6CC;">
+  <article data-timings="">
+    <pre><code class="r">fit_minus_three &lt;- lm(mpg ~ . -cyl -vs -carb, data = mtcars)
+summary(fit_minus_three)
+</code></pre>
+
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ . - cyl - vs - carb, data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.1200 -1.7753 -0.1446  1.0903  4.7172 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)   
+## (Intercept)  9.19763   11.54220   0.797  0.43334   
+## disp         0.01552    0.01214   1.278  0.21342   
+## hp          -0.02471    0.01596  -1.548  0.13476   
+## drat         0.81023    1.45007   0.559  0.58151   
+## wt          -4.13065    1.23593  -3.342  0.00272 **
+## qsec         1.00979    0.48883   2.066  0.04981 * 
+## am           2.58980    1.83528   1.411  0.17104   
+## gear         0.60644    1.20596   0.503  0.61964   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.488 on 24 degrees of freedom
+## Multiple R-squared:  0.8681, Adjusted R-squared:  0.8296 
+## F-statistic: 22.56 on 7 and 24 DF,  p-value: 4.218e-09
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-13" style="background:#BCC6CC;">
+  <article data-timings="">
+    <pre><code class="r">fit_sig &lt;- lm(mpg ~ wt + qsec + am, data = mtcars)
+summary(fit_sig)
+</code></pre>
+
+<pre><code>## 
+## Call:
+## lm(formula = mpg ~ wt + qsec + am, data = mtcars)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3.4811 -1.5555 -0.7257  1.4110  4.6610 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   9.6178     6.9596   1.382 0.177915    
+## wt           -3.9165     0.7112  -5.507 6.95e-06 ***
+## qsec          1.2259     0.2887   4.247 0.000216 ***
+## am            2.9358     1.4109   2.081 0.046716 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 2.459 on 28 degrees of freedom
+## Multiple R-squared:  0.8497, Adjusted R-squared:  0.8336 
+## F-statistic: 52.75 on 3 and 28 DF,  p-value: 1.21e-11
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-14" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Evaluation of base model</h2>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">summary(fit_all)$adj.r.squared
+</code></pre>
+
+<pre><code>## [1] 0.8066423
+</code></pre>
+
+<pre><code class="r">summary(fit_sig)$adj.r.squared
+</code></pre>
+
+<pre><code>## [1] 0.8335561
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-15" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-10-1.png" alt="plot of chunk unnamed-chunk-10"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-16" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Residuals</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>\[\hat Y_i = \hat \beta_0 + \hat \beta_1X_1 + \hat \beta_2X_2 + \epsilon_i\]</p>
+
+<ul>
+<li><p>We want our residuals to follow a normal distribution</p></li>
+<li><p>Some sort of pattern in the residual plot usually points to variance in our depedent variable we have not accounted for</p>
+
+<ul>
+<li>missing terms in model</li>
+</ul></li>
+<li><p>We are looking for homoscedascisity, or constant variance</p></li>
+</ul>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-17" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Histogram of Residuals</h2>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-11-1.png" alt="plot of chunk unnamed-chunk-11"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-18" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Correlation of Significant Variables</h2>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-12-1.png" title="plot of chunk unnamed-chunk-12" alt="plot of chunk unnamed-chunk-12" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-19" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Fitting Model with Interactions</h2>
+  </hgroup>
+  <article data-timings="">
+    <pre><code class="r">fit_int &lt;- lm(mpg ~ wt*qsec + wt*am + qsec*am, data = mtcars)
+summary(fit_int)$coefficients
+</code></pre>
+
+<pre><code>##                Estimate Std. Error    t value    Pr(&gt;|t|)
+## (Intercept) -31.8598140 33.5894244 -0.9485073 0.351950704
+## wt            9.8361860  9.8094164  1.0027290 0.325598997
+## qsec          3.3187634  1.8349518  1.8086379 0.082551306
+## am           21.7150538 15.8498376  1.3700490 0.182851089
+## wt:qsec      -0.7113650  0.5424688 -1.3113474 0.201657327
+## wt:am        -4.7165458  1.6643036 -2.8339456 0.008964866
+## qsec:am      -0.3536353  0.7094109 -0.4984915 0.622495265
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-20" style="background:#BCC6CC;">
+  <article data-timings="">
+    <pre><code class="r">fit_int &lt;- lm(mpg ~ wt + qsec + am + wt:am, data = mtcars)
+summary(fit_int)$coefficients
+</code></pre>
+
+<pre><code>##              Estimate Std. Error   t value     Pr(&gt;|t|)
+## (Intercept)  9.723053  5.8990407  1.648243 0.1108925394
+## wt          -2.936531  0.6660253 -4.409038 0.0001488947
+## qsec         1.016974  0.2520152  4.035366 0.0004030165
+## am          14.079428  3.4352512  4.098515 0.0003408693
+## wt:am       -4.141376  1.1968119 -3.460340 0.0018085763
+</code></pre>
+
+<pre><code class="r">summary(fit_int)$adj.r.squared
+</code></pre>
+
+<pre><code>## [1] 0.8804219
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-21" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-15-1.png" title="plot of chunk unnamed-chunk-15" alt="plot of chunk unnamed-chunk-15" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-22" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-16-1.png" title="plot of chunk unnamed-chunk-16" alt="plot of chunk unnamed-chunk-16" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-23" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-17-1.png" title="plot of chunk unnamed-chunk-17" alt="plot of chunk unnamed-chunk-17" style="display: block; margin: auto;" /></p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-24" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-18-1.png" alt="plot of chunk unnamed-chunk-18"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-25" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Histogram of Residuals of New Model</h2>
+  </hgroup>
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-19-1.png" alt="plot of chunk unnamed-chunk-19"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-26" style="background:#BCC6CC;">
+  <article data-timings="">
+    <p><img src="assets/fig/unnamed-chunk-20-1.png" alt="plot of chunk unnamed-chunk-20"> </p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-27" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Is It Worth It???</h2>
+  </hgroup>
+  <article data-timings="">
+    <h3>Things to consider:</h3>
+
+<ul>
+<li><p>Who is the end user of your analysis?</p></li>
+<li><p>What is the intended application of your analysis?</p></li>
+</ul>
+
+<p><em>&quot;In modeling, our interest lies in parsimonious, interpretable representations of the data that enhance our understanding of the phenomena under study&quot;</em></p>
+
+<p>-Brian Caffo/Jeff Leek/Roger Peng</p>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+<slide class="" id="slide-28" style="background:#BCC6CC;">
+  <hgroup>
+    <h2>Wrap Up</h2>
+  </hgroup>
+  <article data-timings="">
+    <ol>
+<li><p>Regression analysis is difficult!</p>
+
+<ul>
+<li>Keep interactions in mind</li>
+<li>Visualize your data</li>
+<li>Be mindful of application/end user</li>
+<li>Diagnostics are important</li>
+</ul></li>
+<li><p>Regression analysis is fun!</p>
+
+<ul>
+<li>Always something new to uncover</li>
+<li>Many, many techniques to discover and attemp</li>
+</ul></li>
+</ol>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Overview'>
+         1
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=2 title='Intended Audience'>
+         2
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=3 title='Our Data'>
+         3
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=4 title='Motivating Thoughts'>
+         4
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=5 title='NA'>
+         5
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=6 title='Correlation Between All Varibles'>
+         6
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=7 title='First Model'>
+         7
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=8 title='p-values'>
+         8
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=9 title='Feature Selection'>
+         9
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=10 title='NA'>
+         10
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=11 title='NA'>
+         11
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=12 title='NA'>
+         12
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=13 title='NA'>
+         13
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=14 title='Evaluation of base model'>
+         14
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=15 title='NA'>
+         15
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=16 title='Residuals'>
+         16
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=17 title='Histogram of Residuals'>
+         17
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=18 title='Correlation of Significant Variables'>
+         18
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=19 title='Fitting Model with Interactions'>
+         19
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=20 title='NA'>
+         20
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=21 title='NA'>
+         21
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=22 title='NA'>
+         22
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=23 title='NA'>
+         23
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=24 title='NA'>
+         24
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=25 title='Histogram of Residuals of New Model'>
+         25
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=26 title='NA'>
+         26
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=27 title='Is It Worth It???'>
+         27
+      </a>
+    </li>
+    <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=28 title='Wrap Up'>
+         28
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- MathJax: Fall back to local if CDN offline but local image fonts are not supported (saves >100MB) -->
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        inlineMath: [['$','$'], ['\\(','\\)']],
+        processEscapes: true
+      }
+    });
+  </script>
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <!-- <script src="https://c328740.ssl.cf1.rackcdn.com/mathjax/2.0-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  </script> -->
+  <script>window.MathJax || document.write('<script type="text/x-mathjax-config">MathJax.Hub.Config({"HTML-CSS":{imageFont:null}});<\/script><script src="libraries/widgets/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"><\/script>')
+</script>
+<!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>

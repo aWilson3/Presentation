@@ -1,0 +1,332 @@
+---
+title       : Tweaking Linear Regression Models
+subtitle    : An Introduction
+author      : Alexander Hegeman
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+--- bg:#BCC6CC
+
+## Overview
+
+* Build a linear regression model
+
+
+* Investigate ways to improve our model
+    + Look at interaction variables
+
+
+* Evaluate our models
+    + Explore Diagnostics
+
+
+* Interpret our models
+
+
+--- bg:#BCC6CC
+
+## Intended Audience
+
+* Undergraduate students
+
+
+* Beginners in data analysis
+
+
+* Interested hobbyists
+
+
+--- bg:#BCC6CC
+
+
+## Our Data
+
+Data is from the <span style="color:blue; font-weight:bold">1974 Motor Trend US magazine</span>
+
+```{r}
+data(mtcars)
+head(mtcars)
+
+```
+
+--- bg:#BCC6CC
+
+## Motivating Thoughts
+
+1. What is the question we would like to answer?
+
+2. How are we going to answer this question?
+
+3. What do the data look like?
+
+4. How are we going to evaluate our solution?
+
+5. Are there interesting relationships in our data?
+
+
+--- bg:#BCC6CC
+
+We will use $R^2$ to evaluate our models.
+
+$R^2$ is the percentage of variance of the response variable explained by the model
+
+Higher $R^2$ is better*
+
+Other options:
+
+* RMSE
+* Accuracy
+* AUC
+
+Occam's Razor
+
+--- bg:#BCC6CC
+
+### Correlation Between All Varibles
+
+```{r, echo=FALSE, fig.height = 8, fig.width = 12, fig.align = 'center', warning=FALSE}
+
+library(corrplot)
+corrplot.mixed(cor(mtcars), lower = 'number', upper = 'ellipse')
+
+```
+
+
+--- bg:#BCC6CC
+
+## First Model
+
+```{r, echo = TRUE}
+fit_all <- lm(mpg ~ ., data = mtcars)
+summary(fit_all)$coefficients
+
+```
+
+--- bg:#BCC6CC
+
+## p-values
+
+Let $\beta_i$ be the true coefficient of our $i^{th}$ independent variable.
+
+Then our **p-values** represnt the probability of obtaining our coefficient estimate, $\hat \beta_i$, given the null hypothesis $H_0: \beta_i = 0$
+
+Common significance cutoff value is $p = 0.05$
+
+--- bg:#BCC6CC
+
+## Feature Selection
+
+* Identify variable with highest p-value
+
+* Fit new regression model excluding this variable
+
+* Repeat process until all independent variables are significant
+
+--- bg:#BCC6CC
+
+```{r}
+fit_minus_one <- lm(mpg ~ .-cyl, data = mtcars)
+summary(fit_minus_one)$coefficients
+
+```
+
+
+--- bg:#BCC6CC
+
+```{r}
+fit_minus_two <- lm(mpg ~ .-cyl -vs, data = mtcars)
+summary(fit_minus_two)$coefficients
+```
+
+--- bg:#BCC6CC
+
+```{r}
+fit_minus_three <- lm(mpg ~ . -cyl -vs -carb, data = mtcars)
+summary(fit_minus_three)
+
+```
+
+
+--- bg:#BCC6CC
+
+```{r, echo = TRUE}
+fit_sig <- lm(mpg ~ wt + qsec + am, data = mtcars)
+summary(fit_sig)
+
+```
+
+--- bg:#BCC6CC
+
+## Evaluation of base model
+
+```{r}
+summary(fit_all)$adj.r.squared
+```
+
+```{r}
+summary(fit_sig)$adj.r.squared
+```
+
+--- bg:#BCC6CC
+
+```{r, echo = FALSE, fig.height = 8, fig.width = 12}
+diagnosticsdf1 <- data.frame(preds = predict(fit_sig), resids <- resid(fit_sig))
+a = ggplot(diagnosticsdf1, aes(preds, resids))
+a = a + geom_point(size = 6, alpha = 0.7, color = 'blue') + geom_abline(intercept = 0, slope = 0, size = 2, color = 'red') + ggtitle("Residuals Over Predicted Values") + xlab("Predicted Values") + ylab("Residuals") + theme(plot.title = element_text(face = "bold", size = 20), axis.title.x = element_text(face = "bold", size = 14),axis.title.y = element_text(face = "bold", size = 14))
+a
+```
+
+--- bg:#BCC6CC
+
+
+## Residuals
+
+$$\hat Y_i = \hat \beta_0 + \hat \beta_1X_1 + \hat \beta_2X_2 + \epsilon_i$$
+
+* We want our residuals to follow a normal distribution
+
+* Some sort of pattern in the residual plot usually points to variance in our depedent variable we have not accounted for
+    + missing terms in model
+
+* We are looking for homoscedascisity, or constant variance
+
+--- bg:#BCC6CC
+
+## Histogram of Residuals
+
+```{r, echo=FALSE, fig.height = 8, fig.width = 12}
+g2 = ggplot(diagnosticsdf1, aes(x = resids))
+g2 = g2 + geom_histogram(alpha = 0.4, binwidth = 0.3, colour = "black", aes(y = ..density..)) + geom_density(size = 2, col="blue")
+g2
+```
+
+
+--- bg:#BCC6CC
+
+## Correlation of Significant Variables
+
+```{r, echo=FALSE, fig.height = 8, fig.width = 8, fig.align = 'center'}
+
+cars_sig <- subset(mtcars, select = c(mpg, wt, qsec, am))
+corrplot.mixed(cor(cars_sig), lower = 'number', upper = 'ellipse')
+
+```
+
+--- bg:#BCC6CC
+
+## Fitting Model with Interactions
+
+```{r}
+fit_int <- lm(mpg ~ wt*qsec + wt*am + qsec*am, data = mtcars)
+summary(fit_int)$coefficients
+```
+
+--- bg:#BCC6CC
+
+```{r}
+fit_int <- lm(mpg ~ wt + qsec + am + wt:am, data = mtcars)
+summary(fit_int)$coefficients
+summary(fit_int)$adj.r.squared
+
+```
+
+--- bg:#BCC6CC
+
+```{r, echo = FALSE, fig.height = 8, fig.width = 10, fig.align = "center"}
+library(ggplot2)
+b <- ggplot(mtcars, aes(wt, mpg))
+b <- b + geom_point(size = 5) + ggtitle("Mpg Vs Weight") + xlab("Weight") + ylab("Mpg")
+b + theme(plot.title = element_text(face = "bold", size = 20),
+axis.title.x = element_text(face = "bold", size = 14),
+axis.title.y = element_text(face = "bold", size = 14))
+```
+
+--- bg:#BCC6CC
+
+```{r, echo = FALSE, fig.height = 8, fig.width = 12, fig.align= "center"}
+r <- ggplot(data = mtcars, aes(x = wt, y = mpg, group = factor(am), color = factor(am))) + geom_point(alpha = 0.9, size = 7, color = 'black') + geom_point(size = 5) + xlab("Weight") + ylab("Mpg") + ggtitle("Mpg Vs Weight, Grouped by Transmission Type") + scale_colour_discrete(name = "Transmission Type", labels = c("Automatic", "Manual"))
+r + theme(plot.title = element_text(face = "bold", size = 20),
+axis.title.x = element_text(face = "bold", size = 14),
+axis.title.y = element_text(face = "bold", size = 14))
+```
+
+--- bg:#BCC6CC
+
+```{r, echo = FALSE, fig.height = 8, fig.width = 12, fig.align = "center"}
+
+##Get regression lines for the two groups
+reg_line1 <- lm(mpg ~ wt, data = mtcars[mtcars$am == 0,])
+reg_line2 <- lm(mpg ~ wt, data = mtcars[mtcars$am == 1,])
+
+##Create Plot
+r <- r + geom_abline(intercept = coef(reg_line1)[[1]], slope = coef(reg_line1)[[2]], alpha = 0.5, size = 2, color = 'salmon') + geom_abline(intercept = coef(reg_line2)[[1]], slope = coef(reg_line2)[[2]], alpha = 0.6, size = 2, color = 'turquoise')
+r + theme(plot.title = element_text(face = "bold", size = 20), axis.title.x = element_text(face = "bold", size = 14),
+axis.title.y = element_text(face = "bold", size = 14))
+```
+
+--- bg:#BCC6CC
+
+```{r, echo=FALSE, fig.height=8, fig.width=12}
+
+diagnosticsdf2 <- data.frame(preds = predict(fit_int), resids = resid(fit_int))
+q = ggplot(diagnosticsdf2, aes(preds, resids))
+q = q + geom_point(size = 6, alpha = 0.7, color = 'blue') + geom_abline(intercept = 0, slope = 0, size = 2, color = 'red') + ggtitle("Residuals Over Predicted Values") + xlab("Predicted Values") + ylab("Residuals") + theme(plot.title = element_text(face = "bold", size = 20), axis.title.x = element_text(face = "bold", size = 14),axis.title.y = element_text(face = "bold", size = 14))
+q
+```
+
+--- bg:#BCC6CC
+
+## Histogram of Residuals of New Model
+```{r, echo=FALSE, fig.height=8, fig.width = 12}
+q2 = ggplot(diagnosticsdf2, aes(x = resids))
+q2 = q2 + geom_histogram(alpha = 0.4, binwidth = 0.3, colour = "black", aes(y = ..density..)) + geom_density(size = 2, col="blue")
+q2
+```
+
+--- bg:#BCC6CC
+
+```{r, echo = FALSE, fig.height = 8, fig.width = 14}
+
+library(gridExtra)
+require(gridExtra)
+plot1 <- a
+plot2 <- g2
+plot3 <- q
+plot4 <- q2
+
+grid.arrange(plot1, plot2, plot3, plot4, ncol=2, nrow=2)
+
+```
+
+--- bg:#BCC6CC
+
+## Is It Worth It???
+
+### Things to consider:
+
+* Who is the end user of your analysis?
+
+* What is the intended application of your analysis?
+
+*"In modeling, our interest lies in parsimonious, interpretable representations of the data that enhance our understanding of the phenomena under study"*
+
+-Brian Caffo/Jeff Leek/Roger Peng
+
+--- bg:#BCC6CC
+
+## Wrap Up
+
+1. Regression analysis is difficult!
+  + Keep interactions in mind
+  + Visualize your data
+  + Be mindful of application/end user
+  + Diagnostics are important
+
+2. Regression analysis is fun!
+  + Always something new to uncover
+  + Many, many techniques to discover and attemp
+  
